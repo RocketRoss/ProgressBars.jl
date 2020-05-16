@@ -120,6 +120,7 @@ function display_progress(t::ProgressBar)
     print(t.io, join(IDLE[1 + ((i + t.current) % length(IDLE))] for i in 1:barwidth))
     print(t.io, "┫ ")
     print(t.io, status_string)
+    flush(t.io)
   else
     ETA = (t.total-t.current) / speed
 
@@ -147,6 +148,7 @@ function display_progress(t::ProgressBar)
 
     print(t.io, "┫ ")
     print(t.io, status_string)
+    flush(t.io)
   end
 end
 
