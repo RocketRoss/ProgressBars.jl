@@ -42,11 +42,13 @@ mutable struct ProgressBar
   description::AbstractString
   postfix::NamedTuple
   mutex::Threads.SpinLock
+  io::IO
 
-  function ProgressBar(wrapped::Any; total::Int = -2, width = displaysize(stdout)[2])
+  function ProgressBar(wrapped::Any; total::Int = -2, io=stderr)
     this = new()
+    this.io = io
     this.wrapped = wrapped
-    this.width = width
+    this.width = displaysize(this.io)[2]
     this.start_time = time_ns()
     this.last_print = this.start_time - 2 * PRINTING_DELAY
     this.description = ""
@@ -100,11 +102,11 @@ function display_progress(t::ProgressBar)
   postfix_string = postfix_repr(t.postfix)
 
   # Reset Cursor to beginning of the line
-  print("\r")
+  print(t.io, "\r")
 
   if t.description != ""
     barwidth -= length(t.description) + 1
-    print(t.description * " ")
+    print(t.io, t.description * " ")
   end
 
   if (t.total <= 0)
@@ -114,10 +116,10 @@ function display_progress(t::ProgressBar)
       barwidth = 0
     end
 
-    print("┣")
-    print(join(IDLE[1 + ((i + t.current) % length(IDLE))] for i in 1:barwidth))
-    print("┫ ")
-    print(status_string)
+    print(t.io, "┣")
+    print(t.io, join(IDLE[1 + ((i + t.current) % length(IDLE))] for i in 1:barwidth))
+    print(t.io, "┫ ")
+    print(t.io, status_string)
   else
     ETA = (t.total-t.current) / speed
 
@@ -134,17 +136,17 @@ function display_progress(t::ProgressBar)
     cellvalue = t.total / barwidth
     full_cells, remain = divrem(t.current, cellvalue)
 
-    print(percentage_string)
-    print("┣")
-    print(repeat("█", Int(full_cells)))
+    print(t.io, percentage_string)
+    print(t.io, "┣")
+    print(t.io, repeat("█", Int(full_cells)))
     if (full_cells < barwidth)
       part = Int(floor(9 * remain / cellvalue))
-      print(EIGHTS[part])
-      print(repeat(" ", Int(barwidth - full_cells - 1)))
+      print(t.io, EIGHTS[part])
+      print(t.io, repeat(" ", Int(barwidth - full_cells - 1)))
     end
 
-    print("┫ ")
-    print(status_string)
+    print(t.io, "┫ ")
+    print(t.io, status_string)
   end
 end
 
